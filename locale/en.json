@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Mint Lite",
+    "description": "A lightweight theme: a pale-green content area at 25% see-through plus rounded type in light mode, with DSH's stock palette everywhere else — accents, buttons, links and status colours are untouched. No blur, no DOM observers, no timers; unloading restores the original look."
+  }
+}

@@ -1,0 +1,5 @@
+# dsh-mint-lite — one loader entry. The browser half is picked up through the
+# package's dsh.client declaration.
+- insert:
+    - id: dsh-mint-lite
+      name: 'dsh-mint-lite'

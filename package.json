@@ -1,0 +1,60 @@
+{
+  "name": "dsh-mint-lite",
+  "version": "1.0.0",
+  "description": "轻量清新绿主题：浅色淡绿内容区 + 圆润字体，深色沿用 DSH 原生配色，强调色不动。",
+  "license": "MIT",
+  "author": {
+    "name": "Joke Lin",
+    "url": "https://github.com/JokesLin"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JokesLin/dsh-mint-lite.git"
+  },
+  "homepage": "https://github.com/JokesLin/dsh-mint-lite#readme",
+  "bugs": {
+    "url": "https://github.com/JokesLin/dsh-mint-lite/issues"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "theme",
+    "cordis",
+    "plugin",
+    "lightweight",
+    "mint",
+    "green"
+  ],
+  "private": false,
+  "type": "module",
+  "main": "index.js",
+  "icon": "./icon.svg",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "assets/preview.png"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-theme"
+      ]
+    }
+  }
+}
