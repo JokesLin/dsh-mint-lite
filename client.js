@@ -67,6 +67,9 @@ window.__ModuleLoader__.load({
 				card: "#ffffff",
 				code: "#f1f4fa",
 				text: "#121826",
+				// The user's own bubble: deep indigo with white ink, as ds-bot has it.
+				user: "#1e3a8a",
+				userInk: "#ffffff",
 			},
 			dark: {
 				bg: "#0b1020",
@@ -76,6 +79,8 @@ window.__ModuleLoader__.load({
 				card: "#141c33",
 				code: "#141c33",
 				text: "#e8edf7",
+				user: "#3b6fd8",
+				userInk: "#ffffff",
 			},
 		};
 
@@ -85,32 +90,30 @@ window.__ModuleLoader__.load({
 			return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + alpha + ")";
 		};
 
-		/** Linear mix in sRGB; `t` 0 gives `from`, 1 gives `to`. */
-		function mixHex(from, to, t) {
-			const a = parseInt(from.slice(1), 16);
-			const b = parseInt(to.slice(1), 16);
-			const channel = (shift) =>
-				Math.round(((a >> shift) & 255) + (((b >> shift) & 255) - ((a >> shift) & 255)) * t);
-			return "#" + [16, 8, 0].map((s) => channel(s).toString(16).padStart(2, "0")).join("");
-		}
-
 		/**
 		 * The palette as two columns of [token, value] pairs. `sidebar` arrives
 		 * already mixed, because it depends on the slider.
 		 */
-		function paletteTokens(sidebar) {
-			const column = (M, side) => [
+		/**
+		 * The palette as two columns of [token, value] pairs.
+		 *
+		 * The sidebar is a fixed pair, not a slider: this package matches ds-bot's
+		 * moonlight card value for value, and ds-bot keeps the sidebar at
+		 * #eef2f8 / #10172a regardless of anything else.
+		 */
+		function paletteTokens() {
+			const column = (M) => [
 				// --- surfaces
 				["--dsw-alias-bg-base", M.bg],
-				["--dsw-specific-sidebar-fill", side],
-				["--dsw-specific-bubble", M.bubble],
-				["--dsw-specific-bubble-highlight", M.bubbleHi],
+				["--dsw-specific-sidebar-fill", M.sidebar],
+				// The user's bubble. ds-bot paints this deep indigo, not the shell's
+				// near-white `specific-bubble`, and pairs it with white ink.
+				["--dsw-specific-bubble", M.user],
+				["--dsw-specific-bubble-highlight", M.user],
 				["--dsw-alias-bg-layer-1", M.card],
 				["--dsw-alias-bg-layer-2", M.card],
 				["--dsw-alias-bg-layer-3", M.card],
 				["--dsw-alias-bg-module-platform", M.sidebar],
-				// Stays on the content step, not `card`: ds-bot writes this token too,
-				// and the composer card is where a mismatch between the two shows first.
 				["--dsw-specific-input-major", M.bg],
 				// --- interactive fills
 				["--dsw-alias-interactive-bg-hover", ink(M.text, 0.06)],
@@ -129,21 +132,23 @@ window.__ModuleLoader__.load({
 				["--dsw-alias-border-l4", ink(M.text, 0.16)],
 				// --- code
 				["--dsw-alias-markdown-code-block", M.code],
+				// --- layout seats (not shell tokens; read only by layoutCss)
+				["--dml-user-ink", M.userInk],
+				["--dml-assistant-bg", M.bubble],
 			];
-			return { light: column(MOON.light, sidebar.light), dark: column(MOON.dark, sidebar.dark) };
+			return { light: column(MOON.light), dark: column(MOON.dark) };
 		}
 
 		/**
-		 * The shell's own values for the same tokens, per scheme.
+		 * The shell's own definitions for the same tokens, per scheme.
 		 *
-		 * Needed because "stock" cannot simply stop painting: ds-bot's token layer
-		 * keeps writing moonlight values into body's inline style, so an absent
-		 * sheet would leave the shell moonlight, not stock. Writing the shell's
-		 * definitions back with !important is what actually makes the switch work.
+		 * "Stock" cannot simply stop painting: ds-bot's token layer keeps writing
+		 * moonlight values into body's inline style, so an absent sheet would leave
+		 * the shell moonlight. Writing the shell's definitions back with the same
+		 * !important authority is what makes the switch real.
 		 *
-		 * Values reference the shell's own static scale (`--dsw-static-*`) rather
-		 * than spelling out hex, so a future palette change in the shell flows
-		 * through here for free.
+		 * Values reference the shell's own static scale rather than spelling out hex,
+		 * so a future palette change in the shell flows through here for free.
 		 */
 		const STOCK = {
 			light: [
@@ -169,6 +174,11 @@ window.__ModuleLoader__.load({
 				["--dsw-alias-border-l3", "#0000001f"],
 				["--dsw-alias-border-l4", "#00000029"],
 				["--dsw-alias-markdown-code-block", "var(--dsw-static-neutral-bluish-50)"],
+				// Layout seats: on stock the shell has no indigo user bubble, so the
+				// user's own bubble keeps stock ink and the assistant panel goes away
+				// with the flat/bubble control as usual.
+				["--dml-user-ink", "var(--dsw-static-neutral-bluish-1000)"],
+				["--dml-assistant-bg", "var(--dsw-static-deepseek-50)"],
 			],
 			dark: [
 				["--dsw-alias-bg-base", "var(--dsw-static-neutral-bluish-950)"],
@@ -193,20 +203,20 @@ window.__ModuleLoader__.load({
 				["--dsw-alias-border-l3", "#ffffff29"],
 				["--dsw-alias-border-l4", "#fff3"],
 				["--dsw-alias-markdown-code-block", "var(--dsw-static-neutral-bluish-900)"],
+				["--dml-user-ink", "var(--dsw-static-neutral-bluish-50)"],
+				["--dml-assistant-bg", "var(--dsw-static-neutral-bluish-850)"],
 			],
 		};
 
 		// --- Preferences ---------------------------------------------------------
 		const PREFS_KEY = "dsh-mint-lite:prefs";
-		const DEFAULTS = Object.freeze({ layout: "bubble", palette: "moonlight", sidebarAlpha: 40 });
+		const DEFAULTS = Object.freeze({ layout: "bubble", palette: "moonlight" });
 
 		function normalize(raw) {
 			const value = raw !== null && typeof raw === "object" ? raw : {};
-			const alpha = Number(value.sidebarAlpha);
 			return {
 				layout: value.layout === "flat" ? "flat" : "bubble",
 				palette: value.palette === "stock" ? "stock" : "moonlight",
-				sidebarAlpha: Number.isFinite(alpha) ? Math.max(0, Math.min(100, Math.round(alpha))) : DEFAULTS.sidebarAlpha,
 			};
 		}
 
@@ -262,11 +272,7 @@ window.__ModuleLoader__.load({
 					"body[data-ds-dark-theme]{" + declarations(STOCK.dark) + "}",
 				].join("\n");
 			}
-			const t = current.sidebarAlpha / 100;
-			const tokens = paletteTokens({
-				light: mixHex(MOON.light.bg, MOON.light.sidebar, t),
-				dark: mixHex(MOON.dark.bg, MOON.dark.sidebar, t),
-			});
+			const tokens = paletteTokens();
 			return [
 				"body:not([data-ds-dark-theme]){" + declarations(tokens.light) + "}",
 				"body[data-ds-dark-theme]{" + declarations(tokens.dark) + "}",
@@ -274,45 +280,63 @@ window.__ModuleLoader__.load({
 		}
 
 		/**
-		 * Conversation layout: your own messages drop the panel and read as body
-		 * text. The colour is reset alongside the background — ds-bot paints white
-		 * ink for its dark user bubble, so removing only the background would leave
-		 * white text on a light surface.
+		 * Message shape, matched to ds-bot's model rather than the shell's:
+		 *
+		 *   BUBBLE   your message = deep indigo panel, white ink (always);
+		 *            the assistant reply is wrapped in a pale panel.
+		 *   FLAT     your message keeps its indigo panel (ds-bot does not flatten
+		 *            it either); the assistant reply loses its panel and reads as
+		 *            body text.
+		 *
+		 * So the control governs the ASSISTANT panel only. That is exactly what
+		 * `body[data-bt-layout=flat] .bt-bubble{background:none}` does inside
+		 * ds-bot — its `.bt-ububble` is untouched by the flat rules.
 		 */
 		function layoutCss(current) {
-			if (current.layout !== "flat") return "";
-			return [
-				// DSH's own bubbles (ui-chat, ui-goal, ui-user-questions): the hashed
-				// class prefixes change between builds, the suffixes do not.
-				'body[data-mint-layout="flat"] [class*="_userRow"] [class*="_bubble"],',
-				'body[data-mint-layout="flat"] [data-chat-flow-kind="question-reply"] [class*="_bubble"],',
-				'body[data-mint-layout="flat"] [data-chat-flow-kind="command-input"] [class*="_bubble"]{',
-				"  background:transparent !important;",
-				"  border-radius:0 !important;",
-				"  padding:0 !important;",
-				"  color:var(--dsw-alias-label-primary) !important;",
+			// Two facts about the shell that shape this block:
+			//   1. only the user message has a bubble element; assistant replies are
+			//      a bare Markdown root, so a panel has to be drawn here.
+			//   2. the bubble's text colour comes from label-primary, i.e. dark ink,
+			//      which is unreadable on the indigo surface. It must be repainted.
+			const userInk = [
+				// DSH's own user bubbles (ui-chat, ui-goal, ui-user-questions): the
+				// hashed class prefixes change between builds, the suffixes do not.
+				'[class*="_userRow"] [class*="_bubble"],',
+				'[data-chat-flow-kind="question-reply"] [class*="_bubble"],',
+				'[data-chat-flow-kind="command-input"] [class*="_bubble"]{',
+				"  color:var(--dml-user-ink) !important;",
 				"}",
-				'body[data-mint-layout="flat"] [class*="_userRow"],',
-				'body[data-mint-layout="flat"] [class*="_userStack"]{',
-				"  align-items:stretch !important;",
-				"  max-width:100% !important;",
-				"}",
-				// ds-bot paints its own transcript cells from --bt-*.
-				'body[data-mint-layout="flat"] .bt-urow{justify-content:flex-start !important}',
-				'body[data-mint-layout="flat"] .bt-urow .bt-ububble{',
-				"  background:transparent !important;",
-				"  border-radius:0 !important;",
-				"  padding:0 !important;",
-				"  max-width:100% !important;",
-				"  color:var(--bt-ink) !important;",
-				"}",
-				'body[data-mint-layout="flat"] .bt-side-qrow .bt-side-q{',
-				"  background:transparent !important;",
-				"  border-radius:0 !important;",
-				"  padding:0 !important;",
-				"  color:var(--bt-ink) !important;",
+				// `*` covers the Markdown descendants, whose class prefix is not
+				// stable across builds (`_markdown` does not exist in this one).
+				'[class*="_userRow"] [class*="_bubble"] *,',
+				'[data-chat-flow-kind="question-reply"] [class*="_bubble"] *{',
+				"  color:var(--dml-user-ink) !important;",
 				"}",
 			].join("\n");
+
+			// The panel goes on the flow item itself, NOT on the slot anchor inside
+			// it: every slot anchor is `display:contents`, so a background painted
+			// there generates no box at all. The flow item is the real element.
+			const assistantPanel = current.layout === "flat"
+				? ""
+				: [
+					// `data-chat-group-part` separates the two halves of one assistant
+					// step: "reasoning" (the thinking row) and "response" (the reply).
+					// Only the reply gets a panel; panelling the thinking row would
+					// paint a box around a disclosure control.
+					'[data-chat-flow-kind="assistant-step"][data-chat-group-part="response"]{',
+					"  background:var(--dml-assistant-bg) !important;",
+					"  border-radius:18px !important;",
+					"  padding:7px 12px !important;",
+					"  box-sizing:border-box !important;",
+					// Hug the reply, the way ds-bot's bubble does, instead of
+					// stretching the panel across the whole column.
+					"  width:fit-content !important;",
+					"  max-width:100% !important;",
+					"}",
+				].join("\n");
+
+			return [userInk, assistantPanel].filter((part) => part !== "").join("\n");
 		}
 
 		/** Heavier ink: a stroke, because font-weight only jumps 400 -> 500 (+25%). */
@@ -338,9 +362,6 @@ window.__ModuleLoader__.load({
 			".dml-title{color:var(--dsw-alias-label-primary);font-size:14px;line-height:20px}",
 			".dml-desc{color:var(--dsw-alias-label-secondary);margin-top:4px;font-size:12px;line-height:18px}",
 			".dml-control{flex:none;align-items:center;gap:10px;display:flex}",
-			".dml-slider{accent-color:var(--dsw-alias-state-business-primary);cursor:pointer;width:150px}",
-			".dml-slider:disabled{cursor:default;opacity:.4}",
-			".dml-value{color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;font-size:12px;text-align:right;min-width:34px}",
 			".dml-fallback{border:1px solid var(--dsw-alias-border-l3);border-radius:6px;padding:4px 10px;font:inherit;color:var(--dsw-alias-label-primary);background:transparent;cursor:pointer}",
 			".dml-fallback[aria-pressed=true]{background:var(--dsw-alias-interactive-bg-active)}",
 			// The shell removes the hairline from a slot item's last child only, and
@@ -361,9 +382,6 @@ window.__ModuleLoader__.load({
 		function paint() {
 			if (typeof document === "undefined" || styleElement === null) return;
 			styleElement.textContent = styleSheet(prefs);
-			if (document.body === null) return;
-			if (prefs.layout === "flat") document.body.dataset.mintLayout = "flat";
-			else delete document.body.dataset.mintLayout;
 		}
 
 		// --- Settings row --------------------------------------------------------
@@ -379,9 +397,6 @@ window.__ModuleLoader__.load({
 				paletteDesc: "这套月光配色，或回到 DeepSeek Harness 原生。",
 				paletteMoon: "月光",
 				paletteStock: "原生",
-				alpha: "侧栏浓度",
-				alphaDesc: "侧栏颜色相对内容区拉开多少；0 时两栏同色。",
-				alphaOff: "（原生配色下不生效）",
 			},
 			en: {
 				layout: "Message shape",
@@ -392,9 +407,6 @@ window.__ModuleLoader__.load({
 				paletteDesc: "This moonlight palette, or stock DeepSeek Harness.",
 				paletteMoon: "Moonlight",
 				paletteStock: "Stock",
-				alpha: "Sidebar strength",
-				alphaDesc: "How far the sidebar colour sits from the content area; 0 makes them match.",
-				alphaOff: " (not applied on the stock palette)",
 			},
 		};
 
@@ -484,26 +496,6 @@ window.__ModuleLoader__.load({
 						onChange: (next) => update({ palette: next }),
 					}),
 				}),
-				h(Row, {
-					key: "alpha",
-					title: t("alpha"),
-					description: t("alphaDesc") + (state.palette === "stock" ? t("alphaOff") : ""),
-					children: [
-						h("input", {
-							key: "range",
-							className: "dml-slider",
-							type: "range",
-							min: 0,
-							max: 100,
-							step: 5,
-							value: state.sidebarAlpha,
-							disabled: state.palette === "stock",
-							"aria-label": t("alpha"),
-							onChange: (event) => update({ sidebarAlpha: Number(event.target.value) }),
-						}),
-						h("output", { key: "out", className: "dml-value" }, state.sidebarAlpha + "%"),
-					],
-				}),
 			]);
 		}
 
@@ -523,7 +515,6 @@ window.__ModuleLoader__.load({
 					unsubscribe();
 					styleElement = null;
 					element.remove();
-					if (document.body !== null) delete document.body.dataset.mintLayout;
 				};
 			}, "dsh-mint-lite: theme sheet");
 
