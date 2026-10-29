@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Moonlight Lite",
-    "description": "A lightweight theme: a cool-blue content area in light mode and a deep navy dark mode, with rounded type. Accents, buttons, links and status colours keep DSH's stock values. No blur, no DOM observers, no timers; unloading restores the original look."
+    "description": "A lightweight moonlight theme: a cool-blue content area and a deep navy dark mode, with rounded type. Settings adds message shape (bubble/conversation), palette (moonlight/stock) and sidebar strength. Accents, links and status colours keep DSH's stock values."
   }
 }
