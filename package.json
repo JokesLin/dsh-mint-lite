@@ -1,7 +1,7 @@
 {
   "name": "dsh-mint-lite",
-  "version": "1.0.0",
-  "description": "轻量清新绿主题：浅色淡绿内容区 + 圆润字体，深色沿用 DSH 原生配色，强调色不动。",
+  "version": "1.1.0",
+  "description": "极轻量月光配色主题：冷白偏蓝内容区 + 深海军蓝深色模式 + 圆润字体，强调色不动。",
   "license": "MIT",
   "author": {
     "name": "Joke Lin",
@@ -22,8 +22,8 @@
     "cordis",
     "plugin",
     "lightweight",
-    "mint",
-    "green"
+    "moonlight",
+    "navy"
   ],
   "private": false,
   "type": "module",
